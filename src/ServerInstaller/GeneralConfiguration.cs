@@ -40,10 +40,10 @@ namespace ServerInstaller
     /// <summary>List of seed node servers with helper scripts.</summary>
     public static List<string> SeedNodes = new List<string>()
     {
-      "http://ham1.fermat.cloud",
-      "http://ham2.fermat.cloud",
-      "http://ham3.fermat.cloud",
-      "http://ham4.fermat.cloud",
+      "http://ham1.fermat.cloud:9090",
+      "http://ham2.fermat.cloud:9090",
+      "http://ham3.fermat.cloud:9090",
+      "http://ham4.fermat.cloud:9090",
     };
 
 
