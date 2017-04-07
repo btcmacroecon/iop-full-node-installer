@@ -248,6 +248,8 @@ namespace ServerInstaller
 
       try
       {
+        portListenerThreadShutdownEvent.Reset();
+
         Thread portListenerThread = new Thread(new ParameterizedThreadStart(PortListenerThread));
         portListenerThread.Start(Port);
 
