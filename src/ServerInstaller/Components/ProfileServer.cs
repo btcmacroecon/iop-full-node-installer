@@ -39,13 +39,13 @@ namespace ServerInstaller
       { Rid.ubuntu_14_04_x64, new List<InstallationFile>()
       {
         new AptGetInstallationFile("OpenSSL", "openssl"),
-        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.0.1-alpha2/IoP-Profile-Server-v1.0.1-alpha2-Ubuntu-14.04-x64.zip", @"/usr/local/sbin/iop-profile-server", true, "PsDir"),
+        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.0.1-alpha2/IoP-Profile-Server-v1.0.1-alpha2-Ubuntu-14.04-x64.zip", @"/usr/local/bin/iop-profile-server", true, "PsDir"),
       } },
 
       { Rid.ubuntu_16_04_x64, new List<InstallationFile>()
       {
         new AptGetInstallationFile("OpenSSL", "openssl"),
-        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.0.1-alpha2/IoP-Profile-Server-v1.0.1-alpha2-Ubuntu-16.04-x64.zip", @"/usr/local/sbin/iop-profile-server", true, "PsDir"),
+        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.0.1-alpha2/IoP-Profile-Server-v1.0.1-alpha2-Ubuntu-16.04-x64.zip", @"/usr/local/bin/iop-profile-server", true, "PsDir"),
       } },
     };
 

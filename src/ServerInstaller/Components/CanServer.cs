@@ -35,12 +35,12 @@ namespace ServerInstaller
 
       { Rid.ubuntu_14_04_x64, new List<InstallationFile>()
       {
-        new TgzArchiveInstallationFile("CAN server", "https://github.com/Fermat-ORG/iop-content-address-network/releases/download/iop-QmQPrdEJpMvD5mdHZh2UAha78cZxcqAg97JundCrgbN6mF/iop-can-linux-amd64-ad911eb.tgz", @"/usr/local/sbin/iop-can-server", true, "CanDir"),
+        new TgzArchiveInstallationFile("CAN server", "https://github.com/Fermat-ORG/iop-content-address-network/releases/download/iop-QmQPrdEJpMvD5mdHZh2UAha78cZxcqAg97JundCrgbN6mF/iop-can-linux-amd64-ad911eb.tgz", @"/usr/local/bin/iop-can-server", true, "CanDir"),
       } },
 
       { Rid.ubuntu_16_04_x64, new List<InstallationFile>()
       {
-        new TgzArchiveInstallationFile("CAN server", "https://github.com/Fermat-ORG/iop-content-address-network/releases/download/iop-QmQPrdEJpMvD5mdHZh2UAha78cZxcqAg97JundCrgbN6mF/iop-can-linux-amd64-ad911eb.tgz", @"/usr/local/sbin/iop-can-server", true, "CanDir"),
+        new TgzArchiveInstallationFile("CAN server", "https://github.com/Fermat-ORG/iop-content-address-network/releases/download/iop-QmQPrdEJpMvD5mdHZh2UAha78cZxcqAg97JundCrgbN6mF/iop-can-linux-amd64-ad911eb.tgz", @"/usr/local/bin/iop-can-server", true, "CanDir"),
       } },
     };
 
