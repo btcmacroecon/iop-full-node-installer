@@ -382,11 +382,97 @@ namespace ServerInstaller
         log.Debug("Owner of '{0}' changed.", Path);
         res = true;
       }
-      else log.Error("Chown on '{0}' failed.", Path);
+      else log.Error("chown on '{0}' failed.", Path);
 
       log.Trace("(-):{0}", res);
       return res;
     }
+
+
+    /// <summary>
+    /// Change access rights of file on Linux using chmod.
+    /// </summary>
+    /// <param name="Path">Path to file or folder.</param>
+    /// <param name="AccessRights">chmod access rights.</param>
+    /// <returns>true if the function succeeded, false otherwise.</returns>
+    public static bool Chmod(string Path, string AccessRights)
+    {
+      log.Trace("(Path:'{0}',AccessRights:'{1}')", Path, AccessRights);
+      bool res = false;
+
+      if (!SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = true;
+        log.Trace("(-)[NOT_LINUX]:{0}", res);
+        return res;
+      }
+
+      ConsoleProcess chmod = new ConsoleProcess("chmod", string.Format("{0} \"{1}\"", AccessRights, Path));
+      log.Debug("Starting '{0}'.", chmod.GetCommandLine());
+      if (chmod.RunAndWaitSuccessExit())
+      {
+        log.Debug("Access rights of '{0}' changed.", Path);
+        res = true;
+      }
+      else log.Error("chmod on '{0}' failed.", Path);
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
+    /// <summary>
+    /// Installs init script links on Linux using update-rc.d.
+    /// </summary>
+    /// <param name="ScriptName">Name of the init.d script to install.</param>
+    /// <param name="StartupArguments">chmod access rights.</param>
+    /// <returns>true if the function succeeded, false otherwise.</returns>
+    public static bool UpdateRcdInstall(string ScriptName, string StartupArguments)
+    {
+      return UpdateRcd(string.Format("{0} {1}", ScriptName, StartupArguments));
+    }
+
+    /// <summary>
+    /// Uninstalls init script links on Linux using update-rc.d.
+    /// </summary>
+    /// <param name="ScriptName">Name of the init.d script to install.</param>
+    /// <returns>true if the function succeeded, false otherwise.</returns>
+    public static bool UpdateRcdRemove(string ScriptName)
+    {
+      return UpdateRcd(string.Format("-f {0} remove", ScriptName));
+    }
+
+
+    /// <summary>
+    /// Executes update-rc.d on Linux.
+    /// </summary>
+    /// <param name="Args">Arguments for the command.</param>
+    /// <returns>true if the function succeeded, false otherwise.</returns>
+    public static bool UpdateRcd(string Args)
+    {
+      log.Trace("(Args:'{0}')", Args);
+      bool res = false;
+
+      if (!SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = true;
+        log.Trace("(-)[NOT_LINUX]:{0}", res);
+        return res;
+      }
+
+      ConsoleProcess updateRcd = new ConsoleProcess("update-rc.d", Args);
+      log.Debug("Starting '{0}'.", updateRcd.GetCommandLine());
+      if (updateRcd.RunAndWaitSuccessExit())
+      {
+        log.Debug("update-rc.d succeeded.");
+        res = true;
+      }
+      else log.Error("update-rc.d failed.");
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
 
 
     /// <summary>
@@ -570,5 +656,210 @@ namespace ServerInstaller
       log.Trace("(-):{0}", res);
       return res;
     }
+
+
+    /// <summary>
+    /// Installs init.d script on Linux from script template file.
+    /// </summary>
+    /// <param name="TemplateFile">Name of the template file, which is also a name of the init.d script.</param>
+    /// <param name="Replacements">List of template replacements mapped by the patterns to replace.</param>
+    /// <param name="UpdateRcdInstallArgs">Arguments for update-rc.d command for script installation.</param>
+    /// <returns>true if the function succeeds, false otherwise.</returns>
+    public static bool InstallInitdScript(string TemplateFile, Dictionary<string, string> Replacements, string UpdateRcdInstallArgs)
+    {
+      log.Trace("(TemplateFile:'{0}',UpdateRcdInstallArgs:'{1}')", TemplateFile, UpdateRcdInstallArgs);
+
+      bool res = false;
+
+      CUI.WriteRich("Creating init.d script <white>{0}</white>... ", TemplateFile);
+
+      bool error = true;
+      string content = null;
+      string initdScript = Path.Combine("init.d", TemplateFile);
+      string destFile = string.Format("/etc/init.d/{0}", TemplateFile);
+      try
+      {
+        content = File.ReadAllText(initdScript);
+        foreach (KeyValuePair<string, string> kvp in Replacements)
+          content = content.Replace(kvp.Key, kvp.Value);
+
+        File.WriteAllText(destFile, content);
+
+        if (Chmod(destFile, "a+x"))
+        {
+          CUI.WriteOk();
+          error = false;
+        }
+        else
+        {
+          log.Error("chmod on '{0}' failed.", destFile);
+          CUI.WriteFailed();
+          CUI.Write("<red>ERROR:</red> Unable to set access rights of file <white>{0}</white>.\n", initdScript);
+        }
+      }
+      catch (Exception e)
+      {
+        log.Error("Exception occurred: {0}", e.ToString());
+        CUI.WriteFailed();
+        if (content == null) CUI.Write("<red>ERROR:</red> Unable to read file <white>{0}</white>: {1}\n", initdScript, e.Message);
+        else CUI.Write("<red>ERROR:</red> Unable to write to file <white>{0}</white>: {1}\n", destFile, e.Message);
+      }
+
+      if (!error)
+      {
+        CUI.WriteRich("Installing init script links for <white>{0}</white>... ", TemplateFile);
+        if (UpdateRcdInstall(TemplateFile, UpdateRcdInstallArgs))
+        {
+          CUI.WriteOk();
+          res = true;
+        }
+        else
+        {
+          log.Error("update-rc.d failed for '{0}'.", TemplateFile);
+          CUI.WriteFailed();
+        }
+      }
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
+    /// <summary>
+    /// Starts init.d script on Linux.
+    /// </summary>
+    /// <param name="ScriptName">Name of the init.d script to start.</param>
+    /// <param name="Args">Arguments for the command.</param>
+    /// <returns>true if the function succeeded, false otherwise.</returns>
+    public static bool RunInitdScript(string ScriptName, string Args)
+    {
+      log.Trace("(ScriptName:'{0}',Args:'{1}')", ScriptName, Args);
+      bool res = false;
+
+      if (!SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = true;
+        log.Trace("(-)[NOT_LINUX]:{0}", res);
+        return res;
+      }
+
+      string scriptFile = string.Format("/etc/init.d/{0}", ScriptName);
+      ConsoleProcess script = new ConsoleProcess(scriptFile, Args);
+      log.Debug("Starting '{0}'.", script.GetCommandLine());
+      if (script.RunAndWaitSuccessExit())
+      {
+        log.Debug("'{0}' succeeded.", ScriptName);
+        res = true;
+      }
+      else log.Error("'{0}' failed.", ScriptName);
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
+    /// <summary>
+    /// Creates a new scheduled task to run after the system starts using schtasks command on Windows.
+    /// </summary>
+    /// <param name="TaskName">Name of the task to create.</param>
+    /// <param name="Program">Program to execute.</param>
+    /// <param name="Arguments">Arguments for the program to start with.</param>
+    /// <param name="User">Name of the user to start the program under.</param>
+    /// <param name="Password">User's password.</param>
+    /// <returns>true if the function succeeds, false otherwise.</returns>
+    public static bool SchtasksCreate(string TaskName, string Program, string Arguments, string User, string Password)
+    {
+      log.Trace("(TaskName:'{0}',Program:'{1}',Arguments:'{2}',User:'{3}',Password:'{4}')", TaskName, Program, Arguments, User, Password);
+
+      bool res = false;
+
+      try
+      {
+        string taskProgramPath = Path.GetDirectoryName(Program);
+        string taskTemplate = File.ReadAllText(Path.Combine("init.d", "win-task-template.xml"));
+        string taskXmlContents = taskTemplate
+          .Replace("{USER}", User)
+          .Replace("{BIN}", Program)
+          .Replace("{ARGS}", Arguments)
+          .Replace("{PATH}", taskProgramPath);
+
+        string taskXml = Path.Combine(TemporaryDirectoryName, string.Format("{0}.xml", TaskName));
+        File.WriteAllText(taskXml, taskXmlContents);
+
+        res = Schtasks(string.Format("/create /xml \"{0}\" /tn {1} /ru {2} /rp \"{3}\"", taskXml, TaskName, User, Password));
+      }
+      catch (Exception e)
+      {
+        log.Error("Exception occurred: {0}", e.ToString());
+      }
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
+    /// <summary>
+    /// Runs a scheduled task on Windows using schtasks.
+    /// </summary>
+    /// <param name="TaskName">Name of the task to run.</param>
+    /// <returns>true if the function succeeds, false otherwise.</returns>
+    public static bool SchtasksRun(string TaskName)
+    {
+      return Schtasks(string.Format("/run /tn {0}", TaskName));
+    }
+
+
+    /// <summary>
+    /// Terminates a scheduled task on Windows using schtasks.
+    /// </summary>
+    /// <param name="TaskName">Name of the task to terminate.</param>
+    /// <returns>true if the function succeeds, false otherwise.</returns>
+    public static bool SchtasksEnd(string TaskName)
+    {
+      return Schtasks(string.Format("/end /tn {0}", TaskName));
+    }
+
+
+    /// <summary>
+    /// Deletes a scheduled task on Windows using schtasks.
+    /// </summary>
+    /// <param name="TaskName">Name of the task to delete.</param>
+    /// <returns>true if the function succeeds, false otherwise.</returns>
+    public static bool SchtasksDelete(string TaskName)
+    {
+      return Schtasks(string.Format("/delete /f /tn {0}", TaskName));
+    }
+
+
+    /// <summary>
+    /// Executes schtasks command on Windows.
+    /// </summary>
+    /// <param name="Arguments">Arguments for schtasks command.</param>
+    /// <returns>true if the function succeeded, false otherwise.</returns>
+    public static bool Schtasks(string Arguments)
+    {
+      log.Trace("(Arguments:'{0}')", Arguments);
+      bool res = false;
+
+      if (!SystemInfo.CurrentRuntime.IsWindows())
+      {
+        res = true;
+        log.Trace("(-)[NOT_WINDOWS]:{0}", res);
+        return res;
+      }
+
+      ConsoleProcess schtasks = new ConsoleProcess("schtasks.exe", Arguments);
+      log.Debug("Starting '{0}'.", schtasks.GetCommandLine());
+      if (schtasks.RunAndWaitSuccessExit())
+      {
+        log.Debug("schtasks succeeded.");
+        res = true;
+      }
+      else log.Error("schtasks failed.");
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
   }
 }

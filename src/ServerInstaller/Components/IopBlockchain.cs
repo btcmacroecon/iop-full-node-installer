@@ -127,6 +127,12 @@ namespace ServerInstaller
       + "minetoaddr=$MINE_TO_ADDR\n";
 
 
+    /// <summary>Init.d template file name.</summary>
+    private const string InitdScriptTemplateFile = "iop-blockchain";
+
+    /// <summary>Name of Windows scheduled task.</summary>
+    private const string WinTaskName = "IoP-Blockchain";
+
     /// <summary>
     /// Initializes an instance of the component.
     /// </summary>
@@ -176,6 +182,7 @@ namespace ServerInstaller
 
         dataDir = InstallationFile.AskForEmptyDirectory(string.Format("Where do you want <white>IoP Blockchain Core wallet application data</white> to be stored? [{0}] ", appDataDir), appDataDir);
         conf["Application data directory"] = dataDir;
+        GeneralConfiguration.SharedValues.Add("CoreWallet-DataDir", dataDir);
 
         confFile = Path.Combine(dataDir, conf["Configuration file"]);
 
@@ -255,6 +262,13 @@ namespace ServerInstaller
         }
       }
 
+      string iopd = null;
+      if (res)
+      {
+        iopd = SystemInfo.CurrentRuntime.IsLinux() ? InstallationFile.Which("IoPd") : Path.Combine(GeneralConfiguration.SharedValues["CoreWalletDir-InternalPath"], "IoPd.exe");
+        GeneralConfiguration.SharedValues[Name + "-executable"] = iopd;
+        GeneralConfiguration.SharedValues[Name + "-executable-args"] = string.Format("\"{0}\" -datadir=\"{1}\"", iopd, GeneralConfiguration.SharedValues["CoreWallet-DataDir"]);
+      }
 
       if (res && miningEnabled)
       {
@@ -265,7 +279,6 @@ namespace ServerInstaller
         bool miningSetupOk = false;
         bool saveNewConfiguration = false;
 
-        string iopd = SystemInfo.CurrentRuntime.IsLinux() ? InstallationFile.Which("IoPd") : Path.Combine(GeneralConfiguration.SharedValues["CoreWalletDir-InternalPath"], "IoPd.exe");
         string iopCli = SystemInfo.CurrentRuntime.IsLinux() ? InstallationFile.Which("IoP-cli") : Path.Combine(GeneralConfiguration.SharedValues["CoreWalletDir-InternalPath"], "IoP-cli.exe");
 
         CUI.WriteRich("Looking for <white>IoPd</white>... ");
@@ -398,5 +411,114 @@ namespace ServerInstaller
       log.Trace("(-):{0}", res);
       return res;
     }
+
+    public override bool AutorunSetup()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        Dictionary<string, string> templateReplacements = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+          { "{USER}", Program.UserName },
+          { "{BIN}", GeneralConfiguration.SharedValues[Name + "-executable"] },
+          { "{DATA}", GeneralConfiguration.SharedValues["CoreWallet-DataDir"] },
+        };
+
+        res = InstallationFile.InstallInitdScript(InitdScriptTemplateFile, templateReplacements, "start 99 2 3 4 5 . stop 1 0 1 6 .");
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        string bin = GeneralConfiguration.SharedValues[Name + "-executable"];
+        string args = string.Format("-datadir=\"{0}\"", GeneralConfiguration.SharedValues["CoreWallet-DataDir"]);
+        string user = GeneralConfiguration.SharedValues["WinTask-User"];
+        string pass = GeneralConfiguration.SharedValues["WinTask-Pass"];
+        res = InstallationFile.SchtasksCreate(WinTaskName, bin, args, user, pass);
+      }
+
+
+      if (res)
+      {
+        Status |= InstallableComponentStatus.AutorunInstalled;
+        log.Trace("AutorunInstalled status set for '{0}'.", Name);
+      }
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+    public override bool AutorunSetupUninstall()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = InstallationFile.UpdateRcdRemove(InitdScriptTemplateFile);
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        res = InstallationFile.SchtasksDelete(WinTaskName);
+      }
+
+      if (res) Status &= ~InstallableComponentStatus.AutorunInstalled;
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
+    public override bool Start()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = InstallationFile.RunInitdScript(InitdScriptTemplateFile, "start");
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        res = InstallationFile.SchtasksRun(WinTaskName);
+      }
+
+
+      if (res)
+      {
+        Status |= InstallableComponentStatus.Running;
+        log.Trace("Running status set for '{0}'.", Name);
+      }
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
+    public override bool Stop()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = InstallationFile.RunInitdScript(InitdScriptTemplateFile, "stop");
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        res = InstallationFile.SchtasksEnd(WinTaskName);
+      }
+
+
+      if (res) Status &= ~InstallableComponentStatus.Running;
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
   }
 }

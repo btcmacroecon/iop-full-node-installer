@@ -39,12 +39,14 @@ namespace ServerInstaller
       { Rid.ubuntu_14_04_x64, new List<InstallationFile>()
       {
         new AptGetInstallationFile("OpenSSL", "openssl"),
+        new AptGetInstallationFile("Screen", "screen"),
         new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.0.1-alpha2/IoP-Profile-Server-v1.0.1-alpha2-Ubuntu-14.04-x64.zip", @"/usr/local/bin/iop-profile-server", true, "PsDir"),
       } },
 
       { Rid.ubuntu_16_04_x64, new List<InstallationFile>()
       {
         new AptGetInstallationFile("OpenSSL", "openssl"),
+        new AptGetInstallationFile("Screen", "screen"),
         new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.0.1-alpha2/IoP-Profile-Server-v1.0.1-alpha2-Ubuntu-16.04-x64.zip", @"/usr/local/bin/iop-profile-server", true, "PsDir"),
       } },
     };
@@ -115,6 +117,13 @@ namespace ServerInstaller
       + "can_api_port = $CAN_API_PORT\n";
 
 
+    /// <summary>Init.d template file name.</summary>
+    private const string InitdScriptTemplateFile = "iop-profile-server";
+
+    /// <summary>Name of Windows scheduled task.</summary>
+    private const string WinTaskName = "IoP-Profile-Server";
+
+
     /// <summary>
     /// Initializes an instance of the component.
     /// </summary>
@@ -153,8 +162,15 @@ namespace ServerInstaller
 
         string dataDir = InstallationFile.AskForEmptyDirectory(string.Format("Where do you want <white>Profile server application data</white> to be stored? [{0}] ", appDataDir), appDataDir);
         conf["Application data directory"] = dataDir;
+        GeneralConfiguration.SharedValues.Add("Ps-DataDir", dataDir);
 
         string confFile = Path.Combine(GeneralConfiguration.SharedValues["PsDir"], "ProfileServer.conf");
+        string shutdownFile = Path.Combine(GeneralConfiguration.SharedValues["PsDir"], "shutdown.signal");
+        GeneralConfiguration.SharedValues["Ps-ShutdownFile"] = shutdownFile;
+
+        string exeFile = Path.Combine(GeneralConfiguration.SharedValues["PsDir"], "ProfileServer");
+        GeneralConfiguration.SharedValues[Name + "-executable"] = exeFile;
+        GeneralConfiguration.SharedValues[Name + "-executable-args"] = string.Format("\"{0}\"", exeFile);
 
         int primaryPort = int.Parse(conf["Primary port"]);
         primaryPort = AskForOpenPort(string.Format("Please enter a port number for <white>Profile server primary interface</white>. This port will have to be open and publicly accessible from the Internet. [{0}] ", primaryPort), primaryPort, "Profile server primary interface");
@@ -268,5 +284,117 @@ namespace ServerInstaller
       log.Trace("(-):{0}", res);
       return res;
     }
+
+    public override bool AutorunSetup()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        Dictionary<string, string> templateReplacements = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+          { "{USER}", Program.UserName },
+          { "{PATH}", GeneralConfiguration.SharedValues["PsDir"] },
+          { "{BIN}", GeneralConfiguration.SharedValues[Name + "-executable"] },
+          { "{SHUTDOWN}", GeneralConfiguration.SharedValues["Ps-ShutdownFile"] },
+        };
+
+        res = InstallationFile.InstallInitdScript(InitdScriptTemplateFile, templateReplacements, "start 99 2 3 4 5 . stop 1 0 1 6 .");
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        string bin = GeneralConfiguration.SharedValues[Name + "-executable"];
+        string args = "";
+        string user = GeneralConfiguration.SharedValues["WinTask-User"];
+        string pass = GeneralConfiguration.SharedValues["WinTask-Pass"];
+        res = InstallationFile.SchtasksCreate(WinTaskName, bin, args, user, pass);
+      }
+
+
+      if (res)
+      {
+        Status |= InstallableComponentStatus.AutorunInstalled;
+        log.Trace("AutorunInstalled status set for '{0}'.", Name);
+      }
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+    public override bool AutorunSetupUninstall()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = InstallationFile.UpdateRcdRemove(InitdScriptTemplateFile);
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        res = InstallationFile.SchtasksDelete(WinTaskName);
+      }
+
+      if (res) Status &= ~InstallableComponentStatus.AutorunInstalled;
+
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
+    public override bool Start()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = InstallationFile.RunInitdScript(InitdScriptTemplateFile, "start");
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        res = InstallationFile.SchtasksRun(WinTaskName);
+      }
+
+
+      if (res)
+      {
+        Status |= InstallableComponentStatus.Running;
+        log.Trace("Running status set for '{0}'.", Name);
+      }
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
+    public override bool Stop()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = InstallationFile.RunInitdScript(InitdScriptTemplateFile, "stop");
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        res = InstallationFile.SchtasksEnd(WinTaskName);
+      }
+
+
+      if (res) Status &= ~InstallableComponentStatus.Running;
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
   }
 }

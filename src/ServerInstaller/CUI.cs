@@ -255,6 +255,71 @@ namespace ServerInstaller
 
 
     /// <summary>
+    /// Asks user for a password and then for the confirmation.
+    /// </summary>
+    /// <param name="FirstMessage">First message to display to the user.</param>
+    /// <param name="SecondMessage">Second message to display to the user.</param>
+    /// <returns>Password entered by the user.</returns>
+    public static string ReadPasswordAnswer(string FirstMessage, string SecondMessage)
+    {
+      string res = "";
+      bool done = false;
+      while (!done)
+      {
+        WriteRich(FirstMessage);
+        string pass1 = ReadPasswordInput();
+        WriteLine();
+
+        WriteRich(SecondMessage);
+        string pass2 = ReadPasswordInput();
+        WriteLine();
+
+        if (pass1 == pass2)
+        {
+          res = pass1;
+          break;
+        }
+
+        WriteRich("<red>ERROR:</red> Passwords do not match, please try again.\n");
+      }
+
+      return res;
+    }
+
+    /// <summary>
+    /// Reads password from the console input.
+    /// </summary>
+    /// <returns>Password entered by the user.</returns>
+    public static string ReadPasswordInput()
+    {
+      string res = "";
+      ConsoleKeyInfo info = Console.ReadKey(true);
+      while (info.Key != ConsoleKey.Enter)
+      {
+        if (info.Key != ConsoleKey.Backspace)
+        {
+          Console.Write("*");
+          res += info.KeyChar;
+        }
+        else if (info.Key == ConsoleKey.Backspace)
+        {
+          if (!string.IsNullOrEmpty(res))
+          {
+            res = res.Substring(0, res.Length - 1);
+            int pos = Console.CursorLeft;
+            Console.SetCursorPosition(pos - 1, Console.CursorTop);
+            Console.Write(" ");
+            Console.SetCursorPosition(pos - 1, Console.CursorTop);
+          }
+        }
+
+        info = Console.ReadKey(true);
+      }
+      return res;
+    }
+
+
+    /// <summary>
     /// Writes green OK to the console and ends the line.
     /// </summary>
     public static void WriteOk()

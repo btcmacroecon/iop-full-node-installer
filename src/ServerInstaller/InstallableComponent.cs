@@ -20,7 +20,13 @@ namespace ServerInstaller
     InstallationInitiated = 1,
 
     /// <summary>The component installation has been successfully finished.</summary>
-    InstallationCompleted = 2
+    InstallationCompleted = 2,
+
+    /// <summary>Autorun for this component has been installed.</summary>
+    AutorunInstalled = 4,
+
+    /// <summary>This component has been started and is running.</summary>
+    Running = 8
   }
 
 
@@ -54,6 +60,30 @@ namespace ServerInstaller
     /// <returns>true if the function succeeded, false otherwise.</returns>
     public abstract bool Configure();
 
+    /// <summary>
+    /// Installs the component so that it is automatically started during the operating system start.
+    /// </summary>
+    /// <returns>true if the function succeeded, false otherwise.</returns>
+    public abstract bool AutorunSetup();
+
+    /// <summary>
+    /// Uninstalls the autorun setup of the component.
+    /// </summary>
+    /// <returns>true if the function succeeded, false otherwise.</returns>
+    public abstract bool AutorunSetupUninstall();
+
+    /// <summary>
+    /// Starts the component.
+    /// </summary>
+    /// <returns>true if the function succeeded, false otherwise.</returns>
+    public abstract bool Start();
+
+    /// <summary>
+    /// Stops the component.
+    /// </summary>
+    /// <returns>true if the function succeeded, false otherwise.</returns>
+    public abstract bool Stop();
+
 
     /// <summary>
     /// Initializes an instance of the component.
@@ -81,7 +111,7 @@ namespace ServerInstaller
       foreach (InstallationFile instFile in installationFiles)
       {
         log.Info("Installing '{0}'.", instFile.Name);
-        CUI.WriteRich("Installing file <white>{0}</white>.\n", instFile.Name);
+        CUI.WriteRich("Installing module <white>{0}</white>.\n", instFile.Name);
 
         if (!instFile.Install())
         {
@@ -121,6 +151,12 @@ namespace ServerInstaller
     {
       log.Trace("()");
 
+      if (Status.HasFlag(InstallableComponentStatus.Running))
+        Stop();
+
+      if (Status.HasFlag(InstallableComponentStatus.AutorunInstalled))
+        AutorunSetupUninstall();
+
       foreach (InstallationFile instFile in installationFiles)
       {
         if (instFile.Status != InstallationFileStatus.None)
@@ -130,6 +166,7 @@ namespace ServerInstaller
         }
       }
 
+      Status &= ~InstallableComponentStatus.InstallationCompleted;
 
       log.Trace("(-)");
     }

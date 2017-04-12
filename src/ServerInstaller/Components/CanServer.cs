@@ -95,6 +95,13 @@ namespace ServerInstaller
     };
 
 
+    /// <summary>Init.d template file name.</summary>
+    private const string InitdScriptTemplateFile = "iop-can";
+
+    /// <summary>Name of Windows scheduled task.</summary>
+    private const string WinTaskName = "IoP-CAN-Server";
+
+
     /// <summary>
     /// Initializes an instance of the component.
     /// </summary>
@@ -133,6 +140,7 @@ namespace ServerInstaller
 
         string dataDir = InstallationFile.AskForEmptyDirectory(string.Format("Where do you want <white>CAN server application data</white> to be stored? [{0}] ", appDataDir), appDataDir);
         conf["Application data directory"] = dataDir;
+        GeneralConfiguration.SharedValues.Add("Can-DataDir", dataDir);
 
         string confFile = Path.Combine(dataDir, conf["Configuration file"]);
 
@@ -162,7 +170,7 @@ namespace ServerInstaller
           string.Format("#/bin/base\n"
           + "\n"
           + "export IOPCAN_PATH=\"{0}\"\n"
-          + "\"{1}\" init", dataDir, ipfs)
+          + "\"{1}\" init\n", dataDir, ipfs)
           :
           string.Format("@set \"IOPCAN_PATH={0}\"\n"
           + "\"{1}\" init\n", dataDir, ipfs);
@@ -175,11 +183,14 @@ namespace ServerInstaller
           CUI.WriteRich("Creating <white>CAN server daemon script</white>... ");
 
           string daemonIpfsScript = SystemInfo.CurrentRuntime.IsLinux() ? Path.Combine(GeneralConfiguration.SharedValues["CanDir"], "iop-can") : Path.Combine(GeneralConfiguration.SharedValues["CanDir"], "iop-can.cmd");
+          GeneralConfiguration.SharedValues[Name + "-executable"] = daemonIpfsScript;
+          GeneralConfiguration.SharedValues[Name + "-executable-args"] = string.Format("\"{0}\"", daemonIpfsScript);
+
           string daemonIpfsScriptContent = SystemInfo.CurrentRuntime.IsLinux() ?
             string.Format("#/bin/base\n"
             + "\n"
             + "export IOPCAN_PATH=\"{0}\"\n"
-            + "\"{1}\" daemon", dataDir, ipfs)
+            + "\"{1}\" daemon &\n", dataDir, ipfs)
             :
             string.Format("@set \"IOPCAN_PATH={0}\"\n"
             + "\"{1}\" daemon\n", dataDir, ipfs);
@@ -271,6 +282,159 @@ namespace ServerInstaller
       log.Trace("(-):{0}", res);
       return res;
     }
+
+
+    public override bool AutorunSetup()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        CUI.WriteRich("Creating init.d script <white>{0}</white>... ", InitdScriptTemplateFile);
+
+        bool error = true;
+        string content = null;
+        string initdScript = Path.Combine("init.d", InitdScriptTemplateFile);
+        string destFile = string.Format("/etc/init.d/{0}", InitdScriptTemplateFile);
+        try
+        {
+          content = File.ReadAllText(initdScript)
+            .Replace("{USER}", Program.UserName)
+            .Replace("{BIN}", GeneralConfiguration.SharedValues[Name + "-executable"]);
+
+          File.WriteAllText(destFile, content);
+
+          if (InstallationFile.Chmod(destFile, "a+x"))
+          {
+            CUI.WriteOk();
+            error = false;
+          }
+          else
+          {
+            log.Error("chmod on '{0}' failed.", destFile);
+            CUI.WriteFailed();
+            CUI.Write("<red>ERROR:</red> Unable to set access rights of file <white>{0}</white>.\n", initdScript);
+          }
+        }
+        catch (Exception e)
+        {
+          log.Error("Exception occurred: {0}", e.ToString());
+          CUI.WriteFailed();
+          if (content == null) CUI.Write("<red>ERROR:</red> Unable to read file <white>{0}</white>: {1}\n", initdScript, e.Message);
+          else CUI.Write("<red>ERROR:</red> Unable to write to file <white>{0}</white>: {1}\n", destFile, e.Message);
+        }
+
+        if (!error)
+        {
+          CUI.WriteRich("Installing init script links for <white>{0}</white>... ", InitdScriptTemplateFile);
+          if (InstallationFile.UpdateRcdInstall(InitdScriptTemplateFile, "start 99 2 3 4 5 . stop 1 0 1 6 ."))
+          {
+            CUI.WriteOk();
+            res = true;
+          }
+          else
+          {
+            log.Error("update-rc.d failed for '{0}'.", InitdScriptTemplateFile);
+            CUI.WriteFailed();
+          }
+        }
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        string bin = GeneralConfiguration.SharedValues[Name + "-executable"];
+        string args = "";
+        string user = GeneralConfiguration.SharedValues["WinTask-User"];
+        string pass = GeneralConfiguration.SharedValues["WinTask-Pass"];
+        res = InstallationFile.SchtasksCreate(WinTaskName, bin, args, user, pass);
+      }
+
+
+      if (res)
+      {
+        Status |= InstallableComponentStatus.AutorunInstalled;
+        log.Trace("AutorunInstalled status set for '{0}'.", Name);
+      }
+
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+    public override bool AutorunSetupUninstall()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = InstallationFile.UpdateRcdRemove(InitdScriptTemplateFile);
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        res = InstallationFile.SchtasksDelete(WinTaskName);
+      }
+
+
+      if (res) Status &= ~InstallableComponentStatus.AutorunInstalled;
+
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
+    public override bool Start()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = InstallationFile.RunInitdScript(InitdScriptTemplateFile, "start");
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        res = InstallationFile.SchtasksRun(WinTaskName);
+      }
+
+
+      if (res)
+      {
+        Status |= InstallableComponentStatus.Running;
+        log.Trace("Running status set for '{0}'.", Name);
+      }
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
+    public override bool Stop()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = InstallationFile.RunInitdScript(InitdScriptTemplateFile, "stop");
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        res = InstallationFile.SchtasksEnd(WinTaskName);
+      }
+
+
+      if (res) Status &= ~InstallableComponentStatus.Running;
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
 
   }
 }

@@ -21,17 +21,17 @@ namespace ServerInstaller
     {
       { Rid.win7_x64, new List<InstallationFile>()
       {
-        new ZipArchiveInstallationFile("LOC server", "https://github.com/Fermat-ORG/iop-location-based-network/releases/download/1.0.0-alpha/iop-locnet-1.0.0-a1-win64.zip", @"%ProgramFiles%\IoP\LOC"),
+        new ZipArchiveInstallationFile("LOC server", "https://github.com/Fermat-ORG/iop-location-based-network/releases/download/1.0.0-alpha/iop-locnet-1.0.0-a1-win64.zip", @"%ProgramFiles%\IoP\LOC", true, "LocDir"),
       } },
 
       { Rid.win81_x64, new List<InstallationFile>()
       {
-        new ZipArchiveInstallationFile("LOC server", "https://github.com/Fermat-ORG/iop-location-based-network/releases/download/1.0.0-alpha/iop-locnet-1.0.0-a1-win64.zip", @"%ProgramFiles%\IoP\LOC"),
+        new ZipArchiveInstallationFile("LOC server", "https://github.com/Fermat-ORG/iop-location-based-network/releases/download/1.0.0-alpha/iop-locnet-1.0.0-a1-win64.zip", @"%ProgramFiles%\IoP\LOC", true, "LocDir"),
       } },
 
       { Rid.win10_x64, new List<InstallationFile>()
       {
-        new ZipArchiveInstallationFile("LOC server", "https://github.com/Fermat-ORG/iop-location-based-network/releases/download/1.0.0-alpha/iop-locnet-1.0.0-a1-win64.zip", @"%ProgramFiles%\IoP\LOC"),
+        new ZipArchiveInstallationFile("LOC server", "https://github.com/Fermat-ORG/iop-location-based-network/releases/download/1.0.0-alpha/iop-locnet-1.0.0-a1-win64.zip", @"%ProgramFiles%\IoP\LOC", true, "LocDir"),
       } },
 
       { Rid.ubuntu_14_04_x64, new List<InstallationFile>()
@@ -93,7 +93,7 @@ namespace ServerInstaller
 
       { Rid.ubuntu_14_04_x64, new Dictionary<string, string>(StringComparer.Ordinal)
       {
-        { "Application data directory", @"%HOME%/iop-locnet" },
+        { "Application data directory", @"%HOME%/.iop-locnet" },
         { "Configuration file", @"iop-locnet.cfg" },
         { "Database file", @"iop-locnet.sqlite" },
         { "Log file", @"iop-locnet.log" },
@@ -104,7 +104,7 @@ namespace ServerInstaller
 
       { Rid.ubuntu_16_04_x64, new Dictionary<string, string>(StringComparer.Ordinal)
       {
-        { "Application data directory", @"%HOME%/iop-locnet" },
+        { "Application data directory", @"%HOME%/.iop-locnet" },
         { "Configuration file", @"iop-locnet.cfg" },
         { "Database file", @"iop-locnet.sqlite" },
         { "Log file", @"iop-locnet.log" },
@@ -124,6 +124,13 @@ namespace ServerInstaller
       + "--longitude $LONGITUDE\n"
       + "--logpath \"$LOG_FILE\"\n"
       + "--dbpath \"$DB_FILE\"\n";
+
+
+    /// <summary>Init.d template file name.</summary>
+    private const string InitdScriptTemplateFile = "iop-loc";
+
+    /// <summary>Name of Windows scheduled task.</summary>
+    private const string WinTaskName = "IoP-LOC-Server";
 
 
     /// <summary>
@@ -163,10 +170,16 @@ namespace ServerInstaller
       {
         string dataDir = InstallationFile.AskForEmptyDirectory(string.Format("Where do you want <white>LOC server's application data</white> to be stored? [{0}] ", appDataDir), appDataDir);
         conf["Application data directory"] = dataDir;
+        GeneralConfiguration.SharedValues.Add("Loc-DataDir", dataDir);
 
         string logFile = Path.Combine(dataDir, conf["Log file"]);
         string dbFile = Path.Combine(dataDir, conf["Database file"]);
         string confFile = Path.Combine(dataDir, conf["Configuration file"]);
+        GeneralConfiguration.SharedValues.Add("Loc-CfgFile", confFile);
+
+        string locnetd = SystemInfo.CurrentRuntime.IsLinux() ? InstallationFile.Which("iop-locnetd") : Path.Combine(GeneralConfiguration.SharedValues["LocDir"], "iop-locnetd.exe");
+        GeneralConfiguration.SharedValues[Name + "-executable"] = locnetd;
+        GeneralConfiguration.SharedValues[Name + "-executable-args"] = string.Format("\"{0}\" --configfile \"{1}\"", locnetd, confFile);
 
         int localPort = int.Parse(conf["Local port"]);
         while (GeneralConfiguration.UsedPorts.ContainsKey(localPort))
@@ -213,5 +226,115 @@ namespace ServerInstaller
       log.Trace("(-):{0}", res);
       return res;
     }
+
+    public override bool AutorunSetup()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        Dictionary<string, string> templateReplacements = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+          { "{USER}", Program.UserName },
+          { "{BIN}", GeneralConfiguration.SharedValues[Name + "-executable"] },
+          { "{CFG}", GeneralConfiguration.SharedValues["Loc-CfgFile"] },
+        };
+
+        res = InstallationFile.InstallInitdScript(InitdScriptTemplateFile, templateReplacements, "start 99 2 3 4 5 . stop 1 0 1 6 .");
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        string bin = GeneralConfiguration.SharedValues[Name + "-executable"];
+        string args = string.Format("--configfile \"{0}\"", GeneralConfiguration.SharedValues["Loc-CfgFile"]);
+        string user = GeneralConfiguration.SharedValues["WinTask-User"];
+        string pass = GeneralConfiguration.SharedValues["WinTask-Pass"];
+        res = InstallationFile.SchtasksCreate(WinTaskName, bin, args, user, pass);
+      }
+
+
+      if (res)
+      {
+        Status |= InstallableComponentStatus.AutorunInstalled;
+        log.Trace("AutorunInstalled status set for '{0}'.", Name);
+      }
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+    public override bool AutorunSetupUninstall()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = InstallationFile.UpdateRcdRemove(InitdScriptTemplateFile);
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        res = InstallationFile.SchtasksDelete(WinTaskName);
+      }
+
+      if (res) Status &= ~InstallableComponentStatus.AutorunInstalled;
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
+    public override bool Start()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = InstallationFile.RunInitdScript(InitdScriptTemplateFile, "start");
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        res = InstallationFile.SchtasksRun(WinTaskName);
+      }
+
+
+      if (res)
+      {
+        Status |= InstallableComponentStatus.Running;
+        log.Trace("Running status set for '{0}'.", Name);
+      }
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
+    public override bool Stop()
+    {
+      log.Trace("()");
+
+      bool res = false;
+
+      if (SystemInfo.CurrentRuntime.IsLinux())
+      {
+        res = InstallationFile.RunInitdScript(InitdScriptTemplateFile, "stop");
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        res = InstallationFile.SchtasksEnd(WinTaskName);
+      }
+
+
+      if (res) Status &= ~InstallableComponentStatus.Running;
+
+      log.Trace("(-):{0}", res);
+      return res;
+    }
+
+
   }
 }

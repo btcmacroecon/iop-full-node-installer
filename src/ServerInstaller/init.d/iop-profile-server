@@ -1,0 +1,33 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides: iop-profile-server
+# Required-Start: $all
+# Required-Stop: $all
+# Default-Start: 3 4 5
+# Default-Stop: 0 1 2 6
+# Short-Description: IoP Profile server
+# Description: This file starts and stops IoP Profile server
+# 
+### END INIT INFO
+
+
+case "$1" in
+ start)
+   echo "0">"{SHUTDOWN}"
+   screen -S ProfileServerSession -d -m su {USER} -c "cd \"{PATH}\"; \"{BIN}\""
+   ;;
+ stop)
+   echo "1">"{SHUTDOWN}"
+   sleep 5
+   ;;
+ restart)
+   echo "1">"{SHUTDOWN}"
+   sleep 20
+   echo "0">"{SHUTDOWN}"
+   screen -S ProfileServerSession -d -m su {USER} -c "cd \"{PATH}\"; \"{BIN}\""
+   ;;
+ *)
+   echo "Usage: iop-profile-server {start|stop|restart}" >&2
+   exit 3
+   ;;
+esac

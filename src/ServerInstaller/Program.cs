@@ -2,7 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Net;
+using System.Text;
 
 namespace ServerInstaller
 {
@@ -11,12 +13,21 @@ namespace ServerInstaller
     /// <summary>Class logger.</summary>
     private static Logger log = LogManager.GetLogger("ServerInstaller.Program");
 
+    /// <summary>Version of this installer.</summary>
+    private const string Version = "0.2.0";
+
     /// <summary>Test mode disables some requirements thus allowing testing easily.</summary>
     public static bool TestMode = false;
-    
+
     /// <summary>On Linux we require the installer to be run under superuser. This is set to "SUDO_UID:SUDO_GID" if the program was run under sudo.</summary>
     public static string SudoUserGroup = null;
-    
+
+    /// <summary>
+    /// On Linux we require the installer to be run under superuser. This is set to the value of "SUDO_USER" environmental variable if the program was run under sudo.
+    /// On Windows this is set to the value of the "USERNAME" environmental variable.
+    /// </summary>
+    public static string UserName = null;
+
     /// <summary>
     /// Program entry point.
     /// </summary>
@@ -34,6 +45,11 @@ namespace ServerInstaller
         CUI.WriteRich("\n<yellow>Test mode ENABLED. Note that in test mode you can skip the port check by using port values between 50001 and 65535.</yellow>\n\n");
       }
 
+      // Make sure the current directory is set to the directory of the main executable.
+      string path = System.Reflection.Assembly.GetEntryAssembly().Location;
+      path = Path.GetDirectoryName(path);
+      Directory.SetCurrentDirectory(path);
+
       InstallationFile.Chown("./Logs");
       log.Debug("Rid is {0}.", SystemInfo.CurrentRuntime.Rid);
       
@@ -42,7 +58,16 @@ namespace ServerInstaller
         int sudoUid, sudoGid;
         if (int.TryParse(Environment.ExpandEnvironmentVariables("%SUDO_UID%"), out sudoUid)
           && int.TryParse(Environment.ExpandEnvironmentVariables("%SUDO_GID%"), out sudoGid))
+        {
           SudoUserGroup = string.Format("{0}:{1}", sudoUid, sudoGid);
+          UserName = Environment.ExpandEnvironmentVariables("%SUDO_USER%");
+        }
+
+        if (string.IsNullOrEmpty(UserName)) UserName = "root";
+      }
+      else if (SystemInfo.CurrentRuntime.IsWindows())
+      {
+        UserName = Environment.ExpandEnvironmentVariables("%USERNAME%");
       }
 
       switch (SystemInfo.CurrentRuntime.Rid)
@@ -140,9 +165,84 @@ namespace ServerInstaller
       }
 
 
+      if (!error)
+      {
+        log.Info("Entering autorun installation phase.");
+
+        CUI.WriteRich("\nAll the components are installed and configured now. <yellow>If you answer no, the installer will end"
+          + " and you will have to run the servers manually or setup autorun yourself.</yellow> [<white>Y</white>ES / <white>n</white>o] ");
+
+        bool installAutorun = CUI.ReadKeyAnswer(new char[] { 'y', 'n' }) == 'y';
+        CUI.WriteLine();
+        if (installAutorun)
+        {
+          if (SystemInfo.CurrentRuntime.IsWindows()) WindowsAutorunInitialization();
+
+          // Autorun installation
+          foreach (InstallableComponent component in componentList)
+          {
+            log.Info("Installing autorun for '{0}'.", component.Name);
+            CUI.WriteRich("Installing autorun for component <white>{0}</white>.\n", component.Name);
+
+            if (!component.AutorunSetup())
+            {
+              log.Error("Installing autorun of '{0}' failed.", component.Name);
+              CUI.WriteRich("Autorun installation of <white>{0}</white> component <red>FAILED</red>.\n\n", component.Name);
+              error = true;
+              break;
+            }
+
+            CUI.WriteRich("Autorun installation of <white>{0}</white> component <green>SUCCEEDED</green>.\n\n", component.Name);
+          }
+
+
+          if (!error)
+          {
+            CUI.WriteRich("\nDo you want to start all the installed components now? [<white>Y</white>ES / <white>n</white>o] ");
+            bool startAll = CUI.ReadKeyAnswer(new char[] { 'y', 'n' }) == 'y';
+            CUI.WriteLine();
+            if (startAll)
+            {
+              foreach (InstallableComponent component in componentList)
+              {
+                log.Info("Starting '{0}'.", component.Name);
+                CUI.WriteRich("Starting component <white>{0}</white>... ", component.Name);
+
+                if (!component.Start())
+                {
+                  CUI.WriteFailed();
+                  log.Error("Starting of '{0}' failed.", component.Name);
+                  error = true;
+                  break;
+                }
+
+                CUI.WriteOk();
+              }
+            }
+          }
+        }
+        else
+        {
+          CUI.WriteRich("Autorun installation was skipped. Here are commands with arguments that you can use to run all installed components manually:\n\n");
+
+          // Display paths to executables
+          foreach (InstallableComponent component in componentList)
+          {
+            string exeKey = component.Name + "-executable-args";
+            if (GeneralConfiguration.SharedValues.ContainsKey(exeKey))
+            {
+              string[] parts = GeneralConfiguration.SharedValues[exeKey].Split(new char[] { '\n' });
+              foreach (string part in parts)
+                CUI.WriteRich(" * {0}: <white>{1}</white>\n", component.Name, part);
+            }
+          }
+        }
+      }
+
+
       if (error)
       {
-        CUI.WriteRich("Installation failed. Would you like to uninstall components that were installed? [<white>Y</white>ES / <white>n</white>o] ");
+        CUI.WriteRich("Installation failed. Would you like to stop and uninstall all components that were installed? [<white>Y</white>ES / <white>n</white>o] ");
         bool doUninstall = CUI.ReadKeyAnswer(new char[] { 'y', 'n' }) == 'y';
         if (doUninstall)
         {
@@ -159,7 +259,11 @@ namespace ServerInstaller
 
       CUI.WriteLine();
 
-      if (res) CUI.WriteRich("<green>Installation COMPLETE!</green>\n");
+      if (res)
+      {
+        CUI.WriteRich("<green>Installation COMPLETE!</green>\n\n");
+        SaveInstallerSettings();
+      }
       else CUI.WriteRich("<red>Installation FAILED!</red>\n");
 
       CUI.WriteLine();
@@ -211,7 +315,7 @@ namespace ServerInstaller
     /// <summary>
     /// Informs user that we are going to enter configuration phase and asks several questions regarding general configuration.
     /// </summary>
-    /// <returns>true if thefunction succeeded, false otherwise.</returns>
+    /// <returns>true if the function succeeded, false otherwise.</returns>
     public static bool GeneralConfigurationPhase()
     {
       log.Trace("()");
@@ -297,6 +401,102 @@ namespace ServerInstaller
 
       log.Trace("(-):{0}", res);
       return res;
+    }
+
+    /// <summary>
+    /// Asks user about which user and password should be used to run the components.
+    /// </summary>
+    public static void WindowsAutorunInitialization()
+    {
+      log.Trace("()");
+
+      CUI.WriteRich("\nEnter name of the user under which the components will be run. <yellow>This user must have a write access to the application data directories you have selected before.</yellow>: [{0}] ", UserName);
+      string user = CUI.ReadStringAnswer(UserName);
+
+      string pass = CUI.ReadPasswordAnswer(string.Format("Enter <white>{0}</white>'s password. <yellow>Note that the installer will not check if the password is correct, but if it is not, it will fail.</yellow>: ", user), "Please type the password once again: ");
+
+      GeneralConfiguration.SharedValues.Add("WinTask-User", user);
+      GeneralConfiguration.SharedValues.Add("WinTask-Pass", pass);
+
+      CUI.WriteLine();
+
+      log.Trace("(-)");
+    }
+
+    /// <summary>
+    /// Creates the installer settings file and informs user about it.
+    /// </summary>
+    public static void SaveInstallerSettings()
+    {
+      log.Trace("()");
+
+      string home = SystemInfo.CurrentRuntime.IsLinux() ? Environment.ExpandEnvironmentVariables("%HOME%") : Environment.ExpandEnvironmentVariables("%APPDATA%");
+      string appDataDir = SystemInfo.CurrentRuntime.IsLinux() ? Path.Combine(home, ".IoP-ServerInstaller") : Path.Combine(home, "IoP-ServerInstaller");
+
+      StringBuilder sb = new StringBuilder();
+      sb.AppendLine(string.Format("installer_version={0}", Version));
+      sb.AppendLine();
+
+      sb.AppendLine(string.Format("core_wallet_version=3.0.2", Version));
+      sb.AppendLine(string.Format("loc_server_version=1.0.0-a1"));
+      sb.AppendLine(string.Format("can_server_version=0.4.5-dev"));
+      sb.AppendLine(string.Format("profile_server_version=1.0.1-alpha2"));
+      sb.AppendLine();
+
+      string cwDir = GeneralConfiguration.SharedValues.ContainsKey("CoreWalletDir") ? GeneralConfiguration.SharedValues["CoreWalletDir"] : "auto/package";
+      sb.AppendLine(string.Format("core_wallet_dir={0}", cwDir));
+
+      string locDir = GeneralConfiguration.SharedValues.ContainsKey("LocDir") ? GeneralConfiguration.SharedValues["LocDir"] : "auto/package";
+      sb.AppendLine(string.Format("loc_server_dir={0}", locDir));
+
+      string canDir = GeneralConfiguration.SharedValues["CanDir"];
+      sb.AppendLine(string.Format("can_server_dir={0}", canDir));
+
+      string psDir = GeneralConfiguration.SharedValues["PsDir"];
+      sb.AppendLine(string.Format("profile_server_dir={0}", psDir));
+
+      string opensslDir = GeneralConfiguration.SharedValues.ContainsKey("OpenSslDir") ? GeneralConfiguration.SharedValues["OpenSslDir"] : "auto/package";
+      sb.AppendLine(string.Format("openssl_dir={0}", opensslDir));
+
+      sb.AppendLine();
+
+      string cwDataDir = GeneralConfiguration.SharedValues["CoreWallet-DataDir"];
+      sb.AppendLine(string.Format("core_wallet_data_dir={0}", cwDataDir));
+
+      string locDataDir = GeneralConfiguration.SharedValues["Loc-DataDir"];
+      sb.AppendLine(string.Format("loc_server_data_dir={0}", locDataDir));
+
+      string canDataDir = GeneralConfiguration.SharedValues["Can-DataDir"];
+      sb.AppendLine(string.Format("can_server_data_dir={0}", canDataDir));
+
+      string psDataDir = GeneralConfiguration.SharedValues["Ps-DataDir"];
+      sb.AppendLine(string.Format("profile_server_data_dir={0}", psDataDir));
+
+      CUI.WriteRich("Saving server installer configuration... ");
+      string dir = InstallationFile.CreateDirectory(appDataDir);
+      if (dir != null)
+      {
+        string confFile = Path.Combine(dir, "ServerInstaller.config");
+        if (InstallationFile.CreateFileWriteTextChown(confFile, sb.ToString()))
+        {
+          CUI.WriteOk();
+          CUI.WriteRich("\nPlease note that file <white>{0}</white> has been created and it contains information about the installed components. <yellow>You should preserve this file if you want to upgrade or uninstall the installed components later.</yellow>\n", confFile);
+        }
+        else
+        {
+          CUI.WriteFailed();
+          CUI.WriteRich("<red>ERROR:</red> Unable to write to file <white>{0}</white>.", confFile);
+          log.Error("Unable to write to file '{0}'.", confFile);
+        }
+      }
+      else
+      {
+        CUI.WriteFailed();
+        CUI.WriteRich("<red>ERROR:</red> Unable to create directory <white>{0}</white>.", appDataDir);
+        log.Error("Unable to create directory '{0}'.", appDataDir);
+      }
+
+      log.Trace("(-)");
     }
   }
 }
