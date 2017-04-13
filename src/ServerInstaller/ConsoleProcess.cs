@@ -201,7 +201,7 @@ namespace ServerInstaller
     /// </summary>
     /// <param name="TimeoutMs">Number of milliseconds to wait for the process exit before it is considered as failed and the process is terminated.</param>
     /// <returns>true if the function succeeds, false otherwise.</returns>
-    public bool WaitExit(int TimeoutMs = 5000)
+    public bool WaitExit(int TimeoutMs = 15000)
     {
       log.Trace("(TimeoutMs:{0})", TimeoutMs);
 
