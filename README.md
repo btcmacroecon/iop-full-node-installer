@@ -34,6 +34,7 @@ This behavior can be improved in the future, but until then, you can do the foll
  * there should be 4 server processes running once the installer is complete - IoPd, iop-locnet, ipfs, and ProfileServer,
  * if not, you can try to start the servers that are missing - use Task Scheduler on Windows and init.d scripts on Linux, or simply reboot the machine,
  * it is always safer to use default values in the installer,
- * except for the CAN server, all components create logs in their application data folders, you can inspect the logs to find the problem.
+ * except for the CAN server, all components create logs in their application data folders, you can inspect the logs to find the problem,
+ * on Linux, it is safer to run the installation script as non-root with sudo, rather than as root.
 
 If the installation fails, please find the log file in Logs directory that will be created in the `installer` folder. Analyzing the log will help you identify and understand the problem.
