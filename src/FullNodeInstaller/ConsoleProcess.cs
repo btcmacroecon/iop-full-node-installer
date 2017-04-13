@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-namespace ServerInstaller
+namespace FullNodeInstaller
 {
   /// <summary>Possible statuses of the console process.</summary>
   public enum ConsoleProcessStatus
@@ -27,7 +27,7 @@ namespace ServerInstaller
   public class ConsoleProcess
   {
     /// <summary>Class logger.</summary>
-    private static Logger log = LogManager.GetLogger("ServerInstaller.ConsoleProcess");
+    private static Logger log = LogManager.GetLogger("FullNodeInstaller.ConsoleProcess");
 
     /// <summary>Main process executable. May or may not include full path.</summary>
     private string executable;

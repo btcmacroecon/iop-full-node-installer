@@ -7,7 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 
-namespace ServerInstaller
+namespace FullNodeInstaller
 {
   /// <summary>
   /// Obtains and manages configuration values common for multiple components.
@@ -15,7 +15,7 @@ namespace ServerInstaller
   public static class GeneralConfiguration
   {
     /// <summary>Class logger.</summary>
-    private static Logger log = LogManager.GetLogger("ServerInstaller.Program");
+    private static Logger log = LogManager.GetLogger("FullNodeInstaller.Program");
 
     /// <summary>Name of the script on seed nodes that will reveal IP address.</summary>
     public const string ExternalIpUri = "{0}/getip";

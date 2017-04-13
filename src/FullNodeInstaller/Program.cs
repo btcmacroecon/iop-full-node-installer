@@ -6,12 +6,12 @@ using System.IO;
 using System.Net;
 using System.Text;
 
-namespace ServerInstaller
+namespace FullNodeInstaller
 {
   class Program
   {
     /// <summary>Class logger.</summary>
-    private static Logger log = LogManager.GetLogger("ServerInstaller.Program");
+    private static Logger log = LogManager.GetLogger("FullNodeInstaller.Program");
 
     /// <summary>Version of this installer.</summary>
     private const string Version = "0.2.0";
@@ -283,7 +283,7 @@ namespace ServerInstaller
 
       bool res = false;
       CUI.WriteRich(
-          "Welcome to <white>IoP Server Installer</white>. This installer will download, install and configure all parts of IoP full node:\n"
+          "Welcome to <white>IoP Full Node Installer</white>. This installer will download, install and configure all parts of IoP full node:\n"
         + " <white>* IoP Core Wallet</white>\n"
         + " <white>* IoP LOC Server</white>\n"
         + " <white>* IoP CAN Server</white>\n"
@@ -431,7 +431,7 @@ namespace ServerInstaller
       log.Trace("()");
 
       string home = SystemInfo.CurrentRuntime.IsLinux() ? Environment.ExpandEnvironmentVariables("%HOME%") : Environment.ExpandEnvironmentVariables("%APPDATA%");
-      string appDataDir = SystemInfo.CurrentRuntime.IsLinux() ? Path.Combine(home, ".IoP-ServerInstaller") : Path.Combine(home, "IoP-ServerInstaller");
+      string appDataDir = SystemInfo.CurrentRuntime.IsLinux() ? Path.Combine(home, ".IoP-FullNodeInstaller") : Path.Combine(home, "IoP-FullNodeInstaller");
 
       StringBuilder sb = new StringBuilder();
       sb.AppendLine(string.Format("installer_version={0}", Version));
@@ -472,11 +472,11 @@ namespace ServerInstaller
       string psDataDir = GeneralConfiguration.SharedValues["Ps-DataDir"];
       sb.AppendLine(string.Format("profile_server_data_dir={0}", psDataDir));
 
-      CUI.WriteRich("Saving server installer configuration... ");
+      CUI.WriteRich("Saving Full Node Installer configuration... ");
       string dir = InstallationFile.CreateDirectory(appDataDir);
       if (dir != null)
       {
-        string confFile = Path.Combine(dir, "ServerInstaller.config");
+        string confFile = Path.Combine(dir, "FullNodeInstaller.config");
         if (InstallationFile.CreateFileWriteTextChown(confFile, sb.ToString()))
         {
           CUI.WriteOk();

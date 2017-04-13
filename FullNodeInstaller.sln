@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.26228.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DB261898-BAD1-4A7D-8C6D-ED2A32612DC6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerInstaller", "src\ServerInstaller\ServerInstaller.csproj", "{B9848858-7228-41EA-8A69-E73C32930737}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FullNodeInstaller", "src\FullNodeInstaller\FullNodeInstaller.csproj", "{B9848858-7228-41EA-8A69-E73C32930737}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

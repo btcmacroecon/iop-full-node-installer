@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ServerInstaller
+namespace FullNodeInstaller
 {
   /// <summary>Possible states of the installable component.</summary>
   [Flags]
@@ -36,7 +36,7 @@ namespace ServerInstaller
   public abstract class InstallableComponent
   {
     /// <summary>Class logger.</summary>
-    private static Logger log = LogManager.GetLogger("ServerInstaller.InstallableComponent");
+    private static Logger log = LogManager.GetLogger("FullNodeInstaller.InstallableComponent");
 
     /// <summary>Name of the component.</summary>
     public string Name;

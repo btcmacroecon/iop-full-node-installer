@@ -1,0 +1,31 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides: iop-blockchain
+# Required-Start: $all
+# Required-Stop: $all
+# Default-Start: 3 4 5
+# Default-Stop: 0 1 2 6
+# Short-Description: IoP Core server
+# Description: This file starts and stops IoP Core Wallet server
+# 
+### END INIT INFO
+
+
+case "$1" in
+ start)
+   su {USER} -c "\"{BIN}\" -datadir=\"{DATA}\" &"
+   ;;
+ stop)
+   killall -INT IoPd
+   sleep 5
+   ;;
+ restart)
+   killall -INT IoPd
+   sleep 20
+   su {USER} -c "\"{BIN}\" -datadir=\"{DATA}\" &"
+   ;;
+ *)
+   echo "Usage: iop-blockchain {start|stop|restart}" >&2
+   exit 3
+   ;;
+esac

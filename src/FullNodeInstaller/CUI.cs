@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace ServerInstaller
+namespace FullNodeInstaller
 {
   /// <summary>
   /// Implements routines for reading inputs from console and writing ouputs to console. 
@@ -12,7 +12,7 @@ namespace ServerInstaller
   public static class CUI
   {
     /// <summary>Class logger.</summary>
-    private static Logger log = LogManager.GetLogger("ServerInstaller.CUI");
+    private static Logger log = LogManager.GetLogger("FullNodeInstaller.CUI");
 
     /// <summary>Foreground color of the console when the program started.</summary>
     private static ConsoleColor originalForegroundColor;

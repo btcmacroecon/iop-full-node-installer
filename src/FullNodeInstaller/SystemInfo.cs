@@ -5,7 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace ServerInstaller
+namespace FullNodeInstaller
 {
   /// <summary>
   /// Available .NET Core Runtime identifiers as per https://github.com/dotnet/docs/blob/master/docs/core/rid-catalog.md.
@@ -161,7 +161,7 @@ namespace ServerInstaller
   public static class SystemInfo
   {
     /// <summary>Class logger.</summary>
-    private static Logger log = LogManager.GetLogger("ServerInstaller.Program");
+    private static Logger log = LogManager.GetLogger("FullNodeInstaller.SystemInfo");
 
     /// <summary>Current runtime information.</summary>
     private static RuntimeInfo currentRuntime;

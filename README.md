@@ -1,6 +1,6 @@
-# IoP Server Installer
+# IoP Full Node Installer
 
-IoP Server Installer is a tool that helps installing the following components of IoP network infrastructure:
+IoP Full Node Installer is a tool that helps installing the following components of IoP network infrastructure:
 
  * IoP Core Wallet
  * IoP LOC Server
@@ -13,7 +13,7 @@ for installed servers.
 
 # Installation
 
-Download an unpack the latest [server installer binary release](https://github.com/Fermat-ORG/iop-server-installer/releases) for your operating system.
+Download an unpack the latest [full node installer binary release](https://github.com/Fermat-ORG/iop-full-node-installer/releases) for your operating system.
 You should find a single script and a single folder inside. All you need to do is run the script and then follow the instructions on the screen.
 
 Windows users need to execute the script with administrator privileges. 
@@ -24,8 +24,8 @@ running the script under `sudo su` as this will produce wrong file access rights
 
 # Limitations, Known Issues, Troubleshooting
 
-The server installer does not check that every operation completes successfully or that all user inputs are actually valid. For example when the server installer 
-runs the servers for the first time, it does not check whether they start start successfullly and work as expected. Another example is when the server installer 
+The full node installer does not check that every operation completes successfully or that all user inputs are actually valid. For example when the installer 
+runs the servers for the first time, it does not check whether they start start successfullly and work as expected. Another example is when the full node installer 
 installs scheduled tasks on Windows, it asks for a password and does not verify if the entered password is correct.
 
 Things can go wrong especially during the first start of the servers (it is known that CAN server sometimes fails for some reason when started for the first time). 
