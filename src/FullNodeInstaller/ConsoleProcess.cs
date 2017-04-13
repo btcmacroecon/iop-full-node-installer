@@ -232,7 +232,7 @@ namespace FullNodeInstaller
     /// </summary>
     /// <param name="TimeoutMs">Number of milliseconds to wait for the process exit before it is considered as failed and the process is terminated.</param>
     /// <returns>true if the function succeeds, which means that the process finished on time with exit code 0, false otherwise.</returns>
-    public bool WaitSuccessExit(int TimeoutMs = 5000)
+    public bool WaitSuccessExit(int TimeoutMs = 15000)
     {
       bool res = false;
 
@@ -251,7 +251,7 @@ namespace FullNodeInstaller
     /// </summary>
     /// <param name="TimeoutMs">Number of milliseconds to wait for the process exit before it is considered as failed and the process is terminated.</param>
     /// <returns>true if the function succeeds, which means that the process was started successfully and finished on time with exit code 0, false otherwise.</returns>
-    public bool RunAndWaitSuccessExit(int TimeoutMs = 5000)
+    public bool RunAndWaitSuccessExit(int TimeoutMs = 15000)
     {
       return Run() && WaitSuccessExit(TimeoutMs);
     }
