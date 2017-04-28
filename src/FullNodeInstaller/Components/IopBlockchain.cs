@@ -210,7 +210,7 @@ namespace FullNodeInstaller
           conf["RPC user"] = rpcUser;
 
           CUI.WriteRich("Enter RPC password: [{0}] ", rpcPassword);
-          rpcPassword = CUI.ReadStringAnswer(rpcPassword);
+          rpcPassword = CUI.ReadStringAnswer(rpcPassword, true);
 
           CUI.WriteRich("Do you have a mining license and would you like to run a miner? [<white>N</white>O / <white>y</white>es] ");
           miningEnabled = CUI.ReadKeyAnswer(new char[] { 'n', 'y' }) == 'y';
@@ -222,7 +222,7 @@ namespace FullNodeInstaller
             if (!string.IsNullOrEmpty(miningLicense))
             {
               CUI.WriteRich("Enter the private key for your mining license. <yellow>Note that If you entered a wrong mining license or if you enter wrong private key, this installer will not recognize it, but your Core wallet may fail to start.</yellow> Private key (or press ENTER if you changed your mind): ");
-              miningLicensePrivKey = CUI.ReadStringAnswer(miningLicensePrivKey, false);
+              miningLicensePrivKey = CUI.ReadStringAnswer(miningLicensePrivKey, true);
 
               if (!string.IsNullOrEmpty(miningLicensePrivKey))
               {
