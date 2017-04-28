@@ -245,7 +245,7 @@ namespace FullNodeInstaller
     /// <param name="DefaultValue">Default value to be used if user just presses ENTER.</param>
     /// <param name="HideResult">Does not log the actual value the user entered.</param>
     /// <returns>String from the user.</returns>
-    public static string ReadStringAnswer(string DefaultValue, bool HideResult = true)
+    public static string ReadStringAnswer(string DefaultValue, bool HideResult = false)
     {
       string res = Console.ReadLine().Trim();
 
