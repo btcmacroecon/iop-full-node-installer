@@ -14,7 +14,7 @@ namespace FullNodeInstaller
     private static Logger log = LogManager.GetLogger("FullNodeInstaller.Program");
 
     /// <summary>Version of this installer.</summary>
-    private const string Version = "0.2.2";
+    private const string Version = "0.2.3";
 
     /// <summary>Test mode disables some requirements thus allowing testing easily.</summary>
     public static bool TestMode = false;
@@ -169,8 +169,8 @@ namespace FullNodeInstaller
       {
         log.Info("Entering autorun installation phase.");
 
-        CUI.WriteRich("\nAll the components are installed and configured now. <yellow>If you answer no, the installer will end"
-          + " and you will have to run the servers manually or setup autorun yourself.</yellow> [<white>Y</white>ES / <white>n</white>o] ");
+        CUI.WriteRich("\nAll the components are installed and configured now. Would you like to install all components to be started automatically during the startup of your system?"
+          + " <yellow>If you answer no, the installer will end and you will have to run the servers manually or setup autoruns yourself.</yellow> [<white>Y</white>ES / <white>n</white>o] ");
 
         bool installAutorun = CUI.ReadKeyAnswer(new char[] { 'y', 'n' }) == 'y';
         CUI.WriteLine();

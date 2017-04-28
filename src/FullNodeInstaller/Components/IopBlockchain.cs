@@ -222,7 +222,7 @@ namespace FullNodeInstaller
             if (!string.IsNullOrEmpty(miningLicense))
             {
               CUI.WriteRich("Enter the private key for your mining license. <yellow>Note that If you entered a wrong mining license or if you enter wrong private key, this installer will not recognize it, but your Core wallet may fail to start.</yellow> Private key (or press ENTER if you changed your mind): ");
-              miningLicensePrivKey = CUI.ReadStringAnswer(miningLicensePrivKey);
+              miningLicensePrivKey = CUI.ReadStringAnswer(miningLicensePrivKey, false);
 
               if (!string.IsNullOrEmpty(miningLicensePrivKey))
               {
@@ -303,6 +303,7 @@ namespace FullNodeInstaller
 
               CUI.WriteRich("Starting <white>IoP-cli</white> to import the private key... ");
               ConsoleProcess iopCliProcess = new ConsoleProcess(iopCli, string.Format("-rpcconnect=127.0.0.1 -rpcport={0} -rpcuser={1} -rpcpassword={2} importprivkey {3}", rpcPort, rpcUser, rpcPassword, miningLicensePrivKey));
+              iopCliProcess.LogArguments = string.Format("-rpcconnect=127.0.0.1 -rpcport={0} -rpcuser={1} -rpcpassword={2} importprivkey {3}", rpcPort, rpcUser, new string('*', rpcPassword.Length), new string('*', miningLicensePrivKey.Length));
               if (iopCliProcess.RunAndWaitSuccessExit())
               {
                 CUI.WriteOk();
@@ -311,6 +312,7 @@ namespace FullNodeInstaller
                 {
                   CUI.WriteRich("Starting <white>IoP-cli</white> to generate mining-to address... ");
                   iopCliProcess = new ConsoleProcess(iopCli, string.Format("-rpcconnect=127.0.0.1 -rpcport={0} -rpcuser={1} -rpcpassword={2} getnewaddress", rpcPort, rpcUser, rpcPassword));
+                  iopCliProcess.LogArguments = string.Format("-rpcconnect=127.0.0.1 -rpcport={0} -rpcuser={1} -rpcpassword={2} getnewaddress", rpcPort, rpcUser, new string('*', rpcPassword.Length));
                   if (iopCliProcess.RunAndWaitSuccessExit())
                   {
                     List<string> outputLines = iopCliProcess.GetOutput();
@@ -335,6 +337,12 @@ namespace FullNodeInstaller
                     CUI.WriteFailed();
                   }
                 }
+                else
+                {
+                  // We do have mining address from user, so we've got everything now.
+                  log.Debug("We have mining address from user.");
+                  saveNewConfiguration = true;
+                }
               }
               else
               {
@@ -345,6 +353,7 @@ namespace FullNodeInstaller
 
               CUI.WriteRich("Starting <white>IoP-cli</white> to stop IoPd... ");
               iopCliProcess = new ConsoleProcess(iopCli, string.Format("-rpcconnect=127.0.0.1 -rpcport={0} -rpcuser={1} -rpcpassword={2} stop", rpcPort, rpcUser, rpcPassword));
+              iopCliProcess.LogArguments = string.Format("-rpcconnect=127.0.0.1 -rpcport={0} -rpcuser={1} -rpcpassword={2} stop", rpcPort, rpcUser, new string('*', rpcPassword.Length));
               if (iopCliProcess.RunAndWaitSuccessExit()) CUI.WriteOk();
               else CUI.WriteFailed();
 

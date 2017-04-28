@@ -164,6 +164,7 @@ namespace FullNodeInstaller
     public static void WriteRich(string Format, params object[] Args)
     {
       string fullText = string.Format(Format, Args);
+      log.Trace("Console: {0}", fullText);
 
       StringBuilder tagsBuilder = new StringBuilder("");
       StringBuilder regexPatternBuilder = new StringBuilder("");
@@ -231,7 +232,9 @@ namespace FullNodeInstaller
         if (ki.Key == ConsoleKey.Enter) res = defaultAnswer;
       }
 
+      log.Debug("User input: {0}", res);
       WriteRich("<white>{0}</white>\n", res);
+
       return res;
     }
 
@@ -240,10 +243,15 @@ namespace FullNodeInstaller
     /// Waits until the user enters a string.
     /// </summary>
     /// <param name="DefaultValue">Default value to be used if user just presses ENTER.</param>
+    /// <param name="HideResult">Does not log the actual value the user entered.</param>
     /// <returns>String from the user.</returns>
-    public static string ReadStringAnswer(string DefaultValue)
+    public static string ReadStringAnswer(string DefaultValue, bool HideResult = true)
     {
       string res = Console.ReadLine().Trim();
+
+      if (!HideResult) log.Debug("User input: {0}", res);
+      else log.Debug("User input: {0}", new string('*', res.Length));
+
       if (res.Length == 0)
       {
         res = DefaultValue;

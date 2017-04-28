@@ -35,6 +35,9 @@ namespace FullNodeInstaller
     /// <summary>Command line arguments to run the process with.</summary>
     private string arguments;
 
+    /// <summary>Command line arguments for the logging purposes. This is used when we want to hide certain security sensitive values that would appear on the command line.</summary>
+    public string LogArguments;
+
     /// <summary>Console input for the new process.</summary>
     private byte[] inputData;
 
@@ -58,10 +61,11 @@ namespace FullNodeInstaller
     /// <param name="Input">Console input to be sent to the process once it is started.</param>
     public ConsoleProcess(string Executable, string Arguments = null, byte[] Input = null)
     {
-      log.Trace("(Executable:'{0}',Arguments:'{1}')", Executable, Arguments);
+      log.Trace("(Executable:'{0}')", Executable);
 
       executable = Executable;
       arguments = Arguments;
+      LogArguments = Arguments;
       inputData = Input;
       Status = ConsoleProcessStatus.Initialized;
 
@@ -118,7 +122,7 @@ namespace FullNodeInstaller
         process.ErrorDataReceived += new DataReceivedEventHandler(ProcessOutputHandler);
         process.EnableRaisingEvents = true;
 
-        log.Debug("Starting process '{0}'...", GetCommandLine());
+        log.Debug("Starting process '{0}'...", GetCommandLineForLog());
         if (process.Start())
         {
           Status = ConsoleProcessStatus.Running;
@@ -291,6 +295,15 @@ namespace FullNodeInstaller
     public string GetCommandLine()
     {
       return !string.IsNullOrEmpty(arguments) ? string.Format("{0} {1}", executable, arguments) : executable;
+    }
+
+    /// <summary>
+    /// Returns the command line of the process including arguments but LogArguments is used instead of real arguments.
+    /// </summary>
+    /// <returns>Command line of the process including arguments.</returns>
+    public string GetCommandLineForLog()
+    {
+      return !string.IsNullOrEmpty(LogArguments) ? string.Format("{0} {1}", executable, LogArguments) : executable;
     }
   }
 }
