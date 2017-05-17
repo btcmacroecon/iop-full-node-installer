@@ -14,7 +14,7 @@ namespace FullNodeInstaller
     private static Logger log = LogManager.GetLogger("FullNodeInstaller.Program");
 
     /// <summary>Version of this installer.</summary>
-    private const string Version = "0.2.3";
+    private const string Version = "0.2.4";
 
     /// <summary>Test mode disables some requirements thus allowing testing easily.</summary>
     public static bool TestMode = false;
