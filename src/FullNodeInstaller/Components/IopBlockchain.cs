@@ -21,29 +21,29 @@ namespace FullNodeInstaller
     {
       { Rid.win7_x64, new List<InstallationFile>()
       {
-        new ZipArchiveInstallationFile("Core Wallet", "http://repo.fermat.community/windoof/IoP-beta-3.0.2-win64.zip", @"%ProgramFiles%\IoP\Wallet", true, "CoreWalletDir", @"IoP-beta-3.0.2\bin"),
+        new ZipArchiveInstallationFile("Core Wallet", "https://github.com/Fermat-ORG/iop-token-server/releases/download/v4.0.1/IoP-beta-4.0.1-win64.zip", @"%ProgramFiles%\IoP\Wallet", true, "CoreWalletDir", @"IoP-beta-4.0.1\bin"),
       } },
 
       { Rid.win81_x64, new List<InstallationFile>()
       {
-        new ZipArchiveInstallationFile("Core Wallet", "http://repo.fermat.community/windoof/IoP-beta-3.0.2-win64.zip", @"%ProgramFiles%\IoP\Wallet", true, "CoreWalletDir", @"IoP-beta-3.0.2\bin"),
+        new ZipArchiveInstallationFile("Core Wallet", "https://github.com/Fermat-ORG/iop-token-server/releases/download/v4.0.1/IoP-beta-4.0.1-win64.zip", @"%ProgramFiles%\IoP\Wallet", true, "CoreWalletDir", @"IoP-beta-4.0.1\bin"),
       } },
 
       { Rid.win10_x64, new List<InstallationFile>()
       {
-        new ZipArchiveInstallationFile("Core Wallet", "http://repo.fermat.community/windoof/IoP-beta-3.0.2-win64.zip", @"%ProgramFiles%\IoP\Wallet", true, "CoreWalletDir", @"IoP-beta-3.0.2\bin"),
+        new ZipArchiveInstallationFile("Core Wallet", "https://github.com/Fermat-ORG/iop-token-server/releases/download/v4.0.1/IoP-beta-4.0.1-win64.zip", @"%ProgramFiles%\IoP\Wallet", true, "CoreWalletDir", @"IoP-beta-4.0.1\bin"),
       } },
 
       { Rid.ubuntu_14_04_x64, new List<InstallationFile>()
       {
         new AptGetInstallationFile("Core Wallet dependencies", "libprotobuf8 libboost-program-options1.54.0 libboost-thread1.54.0 libboost-chrono1.54.0 libboost-filesystem1.54.0 libqt5gui5 libdb5.3++ libqrencode3 libssl1.0.0 libevent-2.0-5 libevent-pthreads-2.0-5"),
-        new DebPackageInstallationFile("Core Wallet", "http://repo.fermat.community/pool/main/i/iop-blockchain/iop-blockchain_3.0.2-ubuntu1404_amd64.deb", "iop-blockchain"),
+        new DebPackageInstallationFile("Core Wallet", "http://repo.fermat.community/pool/main/i/iop-blockchain/iop-blockchain_4.0.1-ubuntu1404_amd64.deb", "iop-blockchain"),
       } },
 
       { Rid.ubuntu_16_04_x64, new List<InstallationFile>()
       {
         new AptGetInstallationFile("Core Wallet dependencies", "libprotobuf9v5 libboost-program-options1.58.0 libboost-filesystem1.58.0 libboost-thread1.58.0 libboost-chrono1.58.0 libqt5gui5 libdb5.3++ libqrencode3 libssl1.0.0 libevent-2.0-5 libevent-pthreads-2.0-5"),
-        new DebPackageInstallationFile("Core Wallet", "http://repo.fermat.community/pool/main/i/iop-blockchain/iop-blockchain_3.0.2-ubuntu1604_amd64.deb", "iop-blockchain"),
+        new DebPackageInstallationFile("Core Wallet", "http://repo.fermat.community/pool/main/i/iop-blockchain/iop-blockchain_4.0.1-ubuntu1604_amd64.deb", "iop-blockchain"),
       } },
     };
 

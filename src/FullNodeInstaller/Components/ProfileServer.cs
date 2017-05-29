@@ -21,33 +21,33 @@ namespace FullNodeInstaller
       { Rid.win7_x64, new List<InstallationFile>()
       {
         new ZipArchiveInstallationFile("OpenSSL", "http://indy.fulgan.com/SSL/openssl-1.0.2k-x64_86-win64.zip", @"%ProgramFiles%\OpenSSL", true, "OpenSslDir"),
-        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.1.0-beta1/IoP-Profile-Server-v1.1.0-beta1-Win7-2008R2-x64.zip", @"%ProgramFiles%\IoP\ProfileServer", true, "PsDir"),
+        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.1.1-beta2/IoP-Profile-Server-v1.1.1-beta2-Win7-2008R2-x64.zip", @"%ProgramFiles%\IoP\ProfileServer", true, "PsDir"),
       } },
 
       { Rid.win81_x64, new List<InstallationFile>()
       {
         new ZipArchiveInstallationFile("OpenSSL", "https://indy.fulgan.com/SSL/openssl-1.0.2k-x64_86-win64.zip", @"%ProgramFiles%\OpenSSL", true, "OpenSslDir"),
-        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.1.0-beta1/IoP-Profile-Server-v1.1.0-beta1-Win81-2012R2-x64.zip", @"%ProgramFiles%\IoP\ProfileServer", true, "PsDir"),
+        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.1.1-beta2/IoP-Profile-Server-v1.1.1-beta2-Win81-2012R2-x64.zip", @"%ProgramFiles%\IoP\ProfileServer", true, "PsDir"),
       } },
 
       { Rid.win10_x64, new List<InstallationFile>()
       {
         new ZipArchiveInstallationFile("OpenSSL", "https://indy.fulgan.com/SSL/openssl-1.0.2k-x64_86-win64.zip", @"%ProgramFiles%\OpenSSL", true, "OpenSslDir"),
-        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.1.0-beta1/IoP-Profile-Server-v1.1.0-beta1-Win10-2016-x64.zip", @"%ProgramFiles%\IoP\ProfileServer", true, "PsDir"),
+        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.1.1-beta2/IoP-Profile-Server-v1.1.1-beta2-Win10-2016-x64.zip", @"%ProgramFiles%\IoP\ProfileServer", true, "PsDir"),
       } },
 
       { Rid.ubuntu_14_04_x64, new List<InstallationFile>()
       {
         new AptGetInstallationFile("OpenSSL", "openssl"),
         new AptGetInstallationFile("Screen", "screen"),
-        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.1.0-beta1/IoP-Profile-Server-v1.1.0-beta1-Ubuntu-14.04-x64.zip", @"/usr/local/bin/iop-profile-server", true, "PsDir"),
+        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.1.1-beta2/IoP-Profile-Server-v1.1.1-beta2-Ubuntu-14.04-x64.zip", @"/usr/local/bin/iop-profile-server", true, "PsDir"),
       } },
 
       { Rid.ubuntu_16_04_x64, new List<InstallationFile>()
       {
         new AptGetInstallationFile("OpenSSL", "openssl"),
         new AptGetInstallationFile("Screen", "screen"),
-        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.1.0-beta1/IoP-Profile-Server-v1.1.0-beta1-Ubuntu-16.04-x64.zip", @"/usr/local/bin/iop-profile-server", true, "PsDir"),
+        new ZipArchiveInstallationFile("Profile server", "https://github.com/Fermat-ORG/iop-profile-server/releases/download/v1.1.1-beta2/IoP-Profile-Server-v1.1.1-beta2-Ubuntu-16.04-x64.zip", @"/usr/local/bin/iop-profile-server", true, "PsDir"),
       } },
     };
 
