@@ -15,6 +15,9 @@ namespace FullNodeInstaller
     /// <summary>Name of the component.</summary>
     private const string ComponentName = "LOC server";
 
+    /// <summary>Version of this component.</summary>
+    public const string Version = "1.0.0-alpha1";
+
 
     /// <summary>List of files that needs to be downloaded mapped by system RIDs.</summary>
     private static Dictionary<Rid, List<InstallationFile>> InstallationFilesByRid = new Dictionary<Rid, List<InstallationFile>>()

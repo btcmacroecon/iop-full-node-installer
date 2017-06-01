@@ -14,7 +14,7 @@ namespace FullNodeInstaller
     private static Logger log = LogManager.GetLogger("FullNodeInstaller.Program");
 
     /// <summary>Version of this installer.</summary>
-    private const string Version = "0.2.5";
+    private const string Version = "0.2.6";
 
     /// <summary>Test mode disables some requirements thus allowing testing easily.</summary>
     public static bool TestMode = false;
@@ -437,10 +437,10 @@ namespace FullNodeInstaller
       sb.AppendLine(string.Format("installer_version={0}", Version));
       sb.AppendLine();
 
-      sb.AppendLine(string.Format("core_wallet_version=3.0.2", Version));
-      sb.AppendLine(string.Format("loc_server_version=1.0.0-a1"));
-      sb.AppendLine(string.Format("can_server_version=0.4.5-dev"));
-      sb.AppendLine(string.Format("profile_server_version=1.0.2-alpha3"));
+      sb.AppendLine(string.Format("core_wallet_version={0}", IopBlockchain.Version));
+      sb.AppendLine(string.Format("loc_server_version={0}", LocServer.Version));
+      sb.AppendLine(string.Format("can_server_version={0}", CanServer.Version));
+      sb.AppendLine(string.Format("profile_server_version={0}", ProfileServer.Version));
       sb.AppendLine();
 
       string cwDir = GeneralConfiguration.SharedValues.ContainsKey("CoreWalletDir") ? GeneralConfiguration.SharedValues["CoreWalletDir"] : "auto/package";
